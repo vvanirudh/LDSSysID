@@ -7,7 +7,7 @@ from typing import List
 from numba import njit
 import ray
 
-ALPHA = 0.0
+ALPHA = 0.01
 
 
 def construct_training_data(dataset: deque):

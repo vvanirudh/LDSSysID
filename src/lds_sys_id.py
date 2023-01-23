@@ -12,11 +12,11 @@ import copy
 import ray
 
 DATASET_SIZE = 10000
-NOISE_VARIANCE = 0.1
+NOISE_VARIANCE = 0.0
 DEFAULT_NUM_ITERATIONS = 50
 DEFAULT_SAMPLES_PER_ITERATION = 100
 BASELINE_PROB = 0.5
-STATE_SIZE = 2
+STATE_SIZE = 5
 CONTROL_SIZE = 1
 VALUE_FN_BUFFER_SIZE = 100
 HORIZON = 100
@@ -56,20 +56,33 @@ def rollout(
 
 
 def construct_real_world(horizon: int) -> LDS:
-    A = np.array([[1.0, 1.0], [-3.0, 1.0]])
-    B = np.array([[1.0], [3.0]])
-    Q = np.eye(STATE_SIZE, STATE_SIZE)
+    # A = np.array([[1.0, 1.0], [-3.0, 1.0]])
+    # B = np.array([[1.0], [3.0]])
+    # Q = 0.0001 * np.eye(STATE_SIZE, STATE_SIZE)
+    Q = np.zeros((STATE_SIZE, STATE_SIZE))
     R = np.eye(CONTROL_SIZE, CONTROL_SIZE)
-    Qf = Q.copy()
+    Qf = np.eye(STATE_SIZE, STATE_SIZE)
+    # Qf = np.zeros((STATE_SIZE, STATE_SIZE))
     x0 = 0.1 * np.ones(STATE_SIZE)
 
-    return LDS(x0, A, B, Q, R, Qf, horizon, time_varying=False)
+    A = np.eye(STATE_SIZE, STATE_SIZE)
+    B = np.eye(STATE_SIZE, CONTROL_SIZE)
+
+    As = [A.copy() for _ in range(horizon)]
+    for i in range(horizon):
+        # As[i][1, 0] = -5.0 if i % 2 == 0 else -1.0
+        As[i] *= 0.5 if i % 2 == 0 else 1.5
+    Bs = [B.copy() for _ in range(horizon)]
+
+    return A, B, LDS(x0, As, Bs, Q, R, Qf, horizon, time_varying=True)
 
 
-def construct_model(real_world: LDS) -> LDS:
-    eps = 1e-1
-    Ahat = real_world.A + eps * np.eye(STATE_SIZE, STATE_SIZE)
-    Bhat = real_world.B + eps * np.eye(STATE_SIZE, CONTROL_SIZE)
+def construct_model(A: np.ndarray, B: np.ndarray, real_world: LDS) -> LDS:
+    # eps = 1e-1
+    # Ahat = A + eps * np.eye(STATE_SIZE, STATE_SIZE)
+    # Bhat = B + eps * np.eye(STATE_SIZE, CONTROL_SIZE)
+    Ahat = np.eye(STATE_SIZE, STATE_SIZE)
+    Bhat = np.eye(STATE_SIZE, CONTROL_SIZE)
 
     return LDS(
         real_world.initial_state,
@@ -84,9 +97,9 @@ def construct_model(real_world: LDS) -> LDS:
 
 
 def lds_sys_id(mle: bool):
-    real_world = construct_real_world(HORIZON)
-    model = construct_model(real_world)
-    initial_model = construct_model(real_world)
+    A, B, real_world = construct_real_world(HORIZON)
+    model = construct_model(A, B, real_world)
+    initial_model = construct_model(A, B, real_world)
 
     controller = optimal_controller_lds(model)
     dataset = deque(maxlen=DATASET_SIZE)
@@ -160,9 +173,5 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
     moment_costs, _ = lds_sys_id(mle=False)
 
-    plt.plot(np.arange(len(costs)), costs, label="MLE")
-    plt.plot(np.arange(len(costs)), moment_costs, label="Moment")
-    plt.plot(np.arange(len(costs)), [best_cost for _ in range(len(costs))], label="OPT")
-    plt.ylim([best_cost - 1e-3, 0.12])
-    plt.legend()
-    plt.savefig("exp.png")
+    np.save(f"data/mle_{args.seed}.npy", costs)
+    np.save(f"data/moment_based_{args.seed}.npy", moment_costs)
