@@ -173,5 +173,5 @@ if __name__ == "__main__":
     np.random.seed(args.seed)
     moment_costs, _ = lds_sys_id(mle=False)
 
-    np.save(f"data/mle_{args.seed}.npy", costs)
-    np.save(f"data/moment_based_{args.seed}.npy", moment_costs)
+    # np.save(f"data/mle_{args.seed}.npy", costs)
+    # np.save(f"data/moment_based_{args.seed}.npy", moment_costs)

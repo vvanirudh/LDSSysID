@@ -30,10 +30,10 @@ def plot_data(seeds):
     xrange = np.arange(mle_mean_costs.shape[0]) * DEFAULT_SAMPLES_PER_ITERATION
 
     plt.plot(xrange, mle_mean_costs, color=CB_color_cycle[0], label="MLE")
-    plt.fill_between(xrange, mle_mean_costs - mle_std_costs, mle_mean_costs + mle_std_costs, color=CB_color_cycle[0], alpha=0.2)
+    # plt.fill_between(xrange, mle_mean_costs - mle_std_costs, mle_mean_costs + mle_std_costs, color=CB_color_cycle[0], alpha=0.2)
 
     plt.plot(xrange, moment_based_mean_costs, color=CB_color_cycle[1], label="Moment based")
-    plt.fill_between(xrange, moment_based_mean_costs - moment_based_std_costs, moment_based_mean_costs + moment_based_std_costs, color=CB_color_cycle[1], alpha=0.2)
+    # plt.fill_between(xrange, moment_based_mean_costs - moment_based_std_costs, moment_based_mean_costs + moment_based_std_costs, color=CB_color_cycle[1], alpha=0.2)
 
     plt.plot(xrange, [best_cost for _ in range(xrange.shape[0])], color=CB_color_cycle[2], label="Expert")
 
@@ -43,3 +43,7 @@ def plot_data(seeds):
     plt.legend()
     plt.grid(True)
     plt.savefig("lds_exp.png")
+
+if __name__ == "__main__":
+    seeds = np.arange(10)
+    plot_data(seeds)
